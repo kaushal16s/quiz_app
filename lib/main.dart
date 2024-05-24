@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quiz_app/Firebase/firebase.dart';
 import 'package:quiz_app/Admin/Admin_login.dart';
+import 'package:quiz_app/pages/add_quiz.dart';
 import 'package:quiz_app/pages/home.dart';
 import 'package:quiz_app/pages/questions.dart';
 
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         // Add your theme data here if needed
       ),
-      home: const AdminLogin(), // Ensure this matches your AdminLogin class
+      home: const Home(), // Ensure this matches your AdminLogin class
     );
   }
 }
