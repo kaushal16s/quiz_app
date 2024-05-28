@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:quiz_app/service/database.dart';
 import 'package:random_string/random_string.dart';
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 
 class AddQuiz extends StatefulWidget {
   const AddQuiz({Key? key}) : super(key: key);
@@ -15,7 +16,8 @@ class AddQuiz extends StatefulWidget {
 
 class _AddQuizState extends State<AddQuiz> {
   final ImagePicker _picker = ImagePicker();
-  File? selectedImage;
+  File? selectedImageFile;
+  String? selectedImageUrl;
 
   final List<String> quizItems = [
     'Place',
@@ -34,29 +36,51 @@ class _AddQuizState extends State<AddQuiz> {
 
   String? value;
 
-  Future getImage() async {
-    var image = await _picker.pickImage(source: ImageSource.gallery);
+  Future<void> getImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
-    if (image != null) {
+    if (pickedFile != null) {
       setState(() {
-        selectedImage = File(image.path);
+        if (kIsWeb) {
+          selectedImageUrl = pickedFile.path;
+        } else {
+          selectedImageFile = File(pickedFile.path);
+        }
       });
     }
   }
 
   Future<void> uploadItem() async {
-    if (selectedImage != null &&
-        option1Controller.text != "" &&
-        option2Controller.text != "" &&
-        option3Controller.text != "" &&
-        option4Controller.text != "") {
+    if ((selectedImageFile != null || selectedImageUrl != null) &&
+        option1Controller.text.isNotEmpty &&
+        option2Controller.text.isNotEmpty &&
+        option3Controller.text.isNotEmpty &&
+        option4Controller.text.isNotEmpty &&
+        correctController.text.isNotEmpty) {
       String addId = randomAlphaNumeric(7);
-      Reference firebaseStorageRef = FirebaseStorage.instance
-          .ref()
-          .child('Images')
-          .child(addId);
-      final UploadTask task = firebaseStorageRef.putFile(selectedImage!);
-      var downloadUrl = await (await task).ref.getDownloadURL();
+      String downloadUrl;
+
+      if (kIsWeb && selectedImageUrl != null) {
+        final Uint8List fileBytes = await XFile(selectedImageUrl!).readAsBytes();
+        Reference firebaseStorageRef = FirebaseStorage.instance
+            .ref()
+            .child('Images')
+            .child(addId);
+        UploadTask uploadTask = firebaseStorageRef.putData(
+          fileBytes,
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+        downloadUrl = await (await uploadTask).ref.getDownloadURL();
+      } else if (selectedImageFile != null) {
+        Reference firebaseStorageRef = FirebaseStorage.instance
+            .ref()
+            .child('Images')
+            .child(addId);
+        UploadTask uploadTask = firebaseStorageRef.putFile(selectedImageFile!);
+        downloadUrl = await (await uploadTask).ref.getDownloadURL();
+      } else {
+        return;
+      }
 
       Map<String, dynamic> addQuiz = {
         "Image": downloadUrl,
@@ -64,6 +88,7 @@ class _AddQuizState extends State<AddQuiz> {
         "option2": option2Controller.text,
         "option3": option3Controller.text,
         "option4": option4Controller.text,
+        "correct": correctController.text
       };
 
       await DatabaseMethods().addQuizCategory(addQuiz, value!).then((_) {
@@ -141,7 +166,7 @@ class _AddQuizState extends State<AddQuiz> {
               Center(
                 child: GestureDetector(
                   onTap: getImage,
-                  child: selectedImage == null
+                  child: (selectedImageUrl == null && selectedImageFile == null)
                       ? Material(
                     elevation: 4,
                     borderRadius: BorderRadius.circular(20),
@@ -168,8 +193,13 @@ class _AddQuizState extends State<AddQuiz> {
                         border: Border.all(color: Colors.black, width: 1.5),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Image.file(
-                        selectedImage!,
+                      child: kIsWeb
+                          ? Image.network(
+                        selectedImageUrl!,
+                        fit: BoxFit.cover,
+                      )
+                          : Image.file(
+                        selectedImageFile!,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -185,14 +215,7 @@ class _AddQuizState extends State<AddQuiz> {
               SizedBox(height: 20.0),
               buildOptionField('Option 4', option4Controller),
               SizedBox(height: 20.0),
-              Text(
-                'Correct Answer',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
+             buildOptionField('correct', correctController),
               SizedBox(height: 10.0),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 20.0),
