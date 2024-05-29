@@ -96,9 +96,24 @@ class _AddQuizState extends State<AddQuiz> {
           SnackBar(
             content: Text('Quiz has been added'),
           ),
+
         );
+        clearForm();
       });
     }
+  }
+
+  void clearForm() {
+    setState(() {
+      selectedImageFile = null;
+      selectedImageUrl = null;
+      option1Controller.clear();
+      option2Controller.clear();
+      option3Controller.clear();
+      option4Controller.clear();
+      correctController.clear();
+      value = null;
+    });
   }
 
   Widget buildOptionField(String label, TextEditingController controller) {
