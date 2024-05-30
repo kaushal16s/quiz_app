@@ -17,6 +17,7 @@ class _HomeState extends State<Home> {
         children: [
           SingleChildScrollView(
             child: Container(
+
               margin: EdgeInsets.only(bottom: 30.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,7 +82,9 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildCategoryRows() {
+
     return Padding(
+
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
       child: Column(
         children: [
@@ -181,12 +184,13 @@ class _HomeState extends State<Home> {
         );
       },
       child: Material(
-        borderRadius: BorderRadius.circular(20),
-        elevation: 5,
+
+        borderRadius: BorderRadius.circular(30),
+        elevation: 7,
         child: Container(
           width: 130,
           padding: EdgeInsets.all(19),
-          decoration: BoxDecoration(color: Colors.white),
+          decoration: BoxDecoration(color: Colors.white,borderRadius: BorderRadius.circular(20)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
